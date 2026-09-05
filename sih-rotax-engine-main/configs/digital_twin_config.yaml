@@ -1,0 +1,196 @@
+metadata:
+  subsystem: DIGITAL_TWIN_CORE
+  config_version: 1.0.0
+  model_id: ROTAX_914_DIGITAL_TWIN_BASELINE
+digital_twin:
+  residual_thresholds:
+    rpm:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: RPM
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 100.0
+      critical_threshold: 200.0
+      denominator_floor: 0.001
+    map_bar:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: BAR
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 0.05
+      critical_threshold: 0.1
+      denominator_floor: 0.001
+    turbo_rpm:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: RPM
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 5000.0
+      critical_threshold: 10000.0
+      denominator_floor: 0.001
+    airflow_kg_h:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: KG_PER_HOUR
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 15.0
+      critical_threshold: 30.0
+      denominator_floor: 0.001
+    fuel_flow_kg_h:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: KG_PER_HOUR
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 1.2
+      critical_threshold: 2.4
+      denominator_floor: 0.001
+    afr:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: RATIO
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 0.8
+      critical_threshold: 1.6
+      denominator_floor: 0.001
+    combustion_energy:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: JOULE
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 1000.0
+      critical_threshold: 2000.0
+      denominator_floor: 0.001
+    combustion_efficiency:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: RATIO
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 0.05
+      critical_threshold: 0.1
+      denominator_floor: 0.001
+    indicated_power_kw:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: KILOWATT
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 5.0
+      critical_threshold: 10.0
+      denominator_floor: 0.001
+    torque_n_m:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: NEWTON_METER
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 15.0
+      critical_threshold: 30.0
+      denominator_floor: 0.001
+    egt_c:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: CELSIUS
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 25.0
+      critical_threshold: 50.0
+      denominator_floor: 0.001
+    cht_c:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: CELSIUS
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 15.0
+      critical_threshold: 30.0
+      denominator_floor: 0.001
+    coolant_temp_c:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: CELSIUS
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 15.0
+      critical_threshold: 30.0
+      denominator_floor: 0.001
+    oil_temp_c:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: CELSIUS
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 10.0
+      critical_threshold: 20.0
+      denominator_floor: 0.001
+    oil_pressure_bar:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: BAR
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 0.5
+      critical_threshold: 1.0
+      denominator_floor: 0.001
+    turbo_boost_bar:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: BAR
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 0.05
+      critical_threshold: 0.1
+      denominator_floor: 0.001
+    gearbox_rpm:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: RPM
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 50.0
+      critical_threshold: 100.0
+      denominator_floor: 0.001
+    propeller_load_nm:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: NEWTON_METER
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 10.0
+      critical_threshold: 20.0
+      denominator_floor: 0.001
+    thrust_n:
+      tolerance_type: ABSOLUTE
+      debounce_sec: 2.0
+      unit: NEWTON
+      classification: ESTIMATED
+      calibration_required: true
+      source: ENGINEERING_ESTIMATE
+      warning_threshold: 50.0
+      critical_threshold: 100.0
+      denominator_floor: 0.001

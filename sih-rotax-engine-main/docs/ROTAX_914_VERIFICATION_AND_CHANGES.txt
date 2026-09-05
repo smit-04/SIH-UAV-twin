@@ -1,0 +1,114 @@
+================================================================================
+ROTAX 914 VERIFICATION AND CHANGES RECORD
+================================================================================
+Date: 2026-09-01
+Phase: INTEGRATION AND VERIFICATION
+
+--- 1. VERIFICATION SUMMARY ----------------------------------------------------
+The Rotax 914 Engineering Specification has been cross-referenced with the 
+existing simulation configuration. The following mappings and classifications 
+have been finalized:
+
+| Parameter                       | Original Value    | New Value        | Classification | Reason / Source                                      |
+|---------------------------------|-------------------|------------------|----------------|------------------------------------------------------|
+| takeoff_rated_power_hp          | 115.0             | 115.0            | OFFICIAL       | Validated from spec (115 hp class)                   |
+| max_safe_oil_temp_k             | 383.15 K          | 403.15 K         | VERIFIED       | Spec states 130 °C (403.15 K)                        |
+| engine_to_propeller_speed_ratio | 0.411522...       | 0.41175986       | VERIFIED       | 1 / 2.4286 exact ratio                               |
+| lower_heating_value_j_kg        | 44000000.0 J/kg   | 43400000.0 J/kg  | ESTIMATED      | 43.4 MJ/kg baseline estimate                         |
+| idle_fuel_flow_kg_h             | 1.8 kg/h          | 1.3 kg/h         | ESTIMATED      | Based on 1.8 L/h with density ~0.72 kg/L             |
+| max_fuel_flow_kg_h              | 18.5 kg/h         | 23.4 kg/h        | ESTIMATED      | Based on 32.5 L/h with density ~0.72 kg/L            |
+| max_compressor_pressure_ratio   | 1.55              | 2.15             | DERIVED        | PR envelope max at altitude                          |
+| indicated_efficiency_peak       | 0.42              | 0.30             | ESTIMATED      | Adapted to physically plausible boundary             |
+| compressor_efficiency_peak      | 0.76              | 0.75             | ESTIMATED      | Refined turbocharger map estimation                  |
+| lag_tau_s                       | 0.8 s             | 0.5 s            | ESTIMATED      | Engineering judgement for spool up                   |
+| rotational_inertia_kg_m2        | 0.12 kg.m²        | 0.15 kg.m²       | ESTIMATED      | Reduced-order model update                           |
+| gearbox_efficiency              | 0.98              | 0.97             | ESTIMATED      | Efficiency assumption                                |
+| propeller.diameter_m            | 1.9 m             | 1.7 m            | SYNTHETIC      | Calibration default                                  |
+| propeller.torque_coefficient_cq | 0.0065            | 0.0125           | SYNTHETIC      | Calibration default                                  |
+| propeller.thrust_coefficient_ct | 0.085             | 0.075            | SYNTHETIC      | Calibration default                                  |
+
+All other parameters matching the verified standard have been audited and 
+found correct according to the canonical specification.
+
+--- 2. INTEGRATION CHANGES -----------------------------------------------------
+The above parameter changes have been strictly applied to:
+- configs/module02/engines/rotax_914.yaml
+
+No internal simulation physics engines, models, or algorithms were altered.
+The application architecture and existing integration points (i.e. FastAPI backend,
+DigitalTwinEngine, MasterIntegrationRunner) were strictly preserved.
+
+================================================================================
+END OF RECORD
+================================================================================
+
+==================================================
+PHASE 4: SEVERE VIOLATION / HARD-LIMIT DEBOUNCE BYPASS
+==================================================
+
+1. ISSUE IDENTIFIED
+During the final verification audit, it was discovered that the 2.0-second debounce timer in ResidualAnalyzer suppressed ALL warnings equally, including severe deviations and critical hard-limit violations (e.g. RPM > 5800).
+
+2. RESOLUTION
+- Updated src/digital_twin/analysis/residual_analyzer.py to parse physical operating safety limits directly from configs/module02/engines/rotax_914.yaml
+- Implemented a severe violation check in ResidualAnalyzer.analyze().
+- If an observed value crosses a documented max operating limit (e.g., max_takeoff_rpm = 5800.0, max_safe_cht_k = 408.15K), the warning is flagged immediately (bypassing the 2.0s transient debounce timer).
+- Normal threshold excursions (e.g. RPM deviation of 150 but absolute RPM < 5800) continue to use the 2.0s debounce timer.
+
+3. VALIDATION
+Created a unit test to validate Conditions A, B, C, and D:
+- Condition A: Short transient (1.5s duration) triggers 0 warnings and properly clears tracking state.
+- Condition B: Persistent violation (>2.0s) properly triggers warnings after the debounce timer expires.
+- Condition C: Severe hard-limit violation (e.g. RPM=5850) triggers the warning instantaneously, bypassing the debounce timer.
+- Condition D: Engine 1 and Engine 2 maintain completely independent debounce and tracking states.
+
+4. END OF INTEGRATION
+The Rotax 914 Digital Twin Integration is complete.
+
+
+==================================================
+PHASE 5: PARAMETER-SPECIFIC TOLERANCES & DEBOUNCE
+==================================================
+
+1. ISSUE IDENTIFIED
+The user identified that a universal definition of "major deviation" or a uniform 2.0s debounce timer for all engine parameters is flawed, as different parameters have different scales, limits, and acceptable transient behaviors.
+
+2. RESOLUTION
+- Updated `configs/digital_twin_config.yaml` to structurally support parameter-specific tolerances (e.g., `ABSOLUTE` vs `RELATIVE`) and parameter-specific `debounce_sec`. By default, existing absolute values and a 2.0s debounce are preserved to maintain backward compatibility, ensuring calibration requirements are highlighted.
+- Updated `ParameterResidual` in `src/digital_twin/models/residual_state.py` to accept `tolerance_type` and compute warnings accurately against absolute residuals or relative percentages.
+- Refactored `ResidualAnalyzer.analyze()` in `src/digital_twin/analysis/residual_analyzer.py` to pull parameter-specific tolerances and debounce periods from the configuration, applying them independently per parameter while preserving hard-limit bypass logic.
+
+3. VALIDATION
+- Extended validation tests (`test_parameter_debounce.py`) to confirm that different parameters behave correctly according to their specifically assigned debounce periods (e.g. a parameter configured with a 5.0s debounce does not trigger until 5s, while a parameter with a 1.0s debounce triggers earlier).
+- Verified previous test suite (`test_hard_limit.py`) remained unbroken and that hard-limits continue to bypass the parameter-specific debounce correctly.
+
+==================================================
+PHASE 6: OPERATING LIMITS AND RESIDUAL TOLERANCES
+==================================================
+
+1. ISSUE IDENTIFIED
+The integration required aligning the residual-tolerance system and safety limits with verified Rotax 914 authoritative data. Previous checks only bypassed debounce for upper limits, ignoring lower physical limits. 
+
+2. AUDIT FINDINGS
+- Expected vs Actual Simulation Residual Tolerances: No Rotax authoritative documentation exists specifying simulation residual tolerances. Thus, all 18 parameters remain classified as ESTIMATED and use ABSOLUTE thresholds with a 2.0s debounce.
+- Verified physical operating limits from rotax_914.yaml dictate boundaries, not modeling tolerance.
+
+3. RESOLUTION
+- Updated ResidualAnalyzer._load_hard_limits() to explicitly parse both max_limits and min_limits (e.g. min_oil_pressure_pa).
+- Updated the severe violation bypass check to trigger immediately on both UPPER limits (observed >= max_limit) and LOWER limits (observed <= min_limit).
+- Added max_safe_coolant_temp_k parsing logic.
+
+4. VALIDATED HARD LIMITS
+| Parameter        | Min Limit | Max Limit | Source Classification |
+|------------------|-----------|-----------|-----------------------|
+| rpm              | -         | 5800.0    | VERIFIED              |
+| map_bar          | -         | 1.32      | VERIFIED              |
+| cht_c            | -         | 135.0     | VERIFIED              |
+| egt_c            | -         | 950.0     | VERIFIED              |
+| oil_temp_c       | -         | 130.0     | VERIFIED              |
+| oil_pressure_bar | 0.8       | 7.0       | VERIFIED              |
+| coolant_temp_c   | -         | 120.0     | VERIFIED              |
+| turbo_rpm        | -         | 140000.0  | ESTIMATED/DERIVED     |
+
+5. VALIDATION
+- Extended test_hard_limit.py to ensure that violating a lower limit triggers the warning instantaneously, correctly bypassing the 2.0s transient debounce timer.

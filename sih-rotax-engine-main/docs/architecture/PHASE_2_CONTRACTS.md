@@ -1,0 +1,83 @@
+# Phase 2A: Digital Twin Data Contracts
+
+## Overview
+Phase 2A establishes the authoritative data contracts for the Digital Twin Core. This phase resolves the ambiguity of previous dictionary-based states and imposes a strict type-safe, explicitly segregated schema for the Twin's lifecycle.
+
+These contracts serve as the foundation for the sequential Digital Twin Core phases:
+- Phase 2B: Healthy Expected-State Interface
+- Phase 2C: Observed/Expected Synchronization
+- Phase 2D: State Estimation
+- Phase 2E: Residual & Confidence Engine
+- Phase 2F: Health-State Management
+- Phase 2G: Phase 2 Integration + Acceptance
+
+## Architectural Principles
+
+1. **Strict Separation of Concerns**:
+   - The **Physical Twin** (real-world engine) produces observations via sensors.
+   - The **Digital Twin Physics** simulation produces expected baseline behaviors.
+   - The **Digital Twin State Estimator** produces an estimated actual state (the authoritative "Twin").
+   - These three concepts must never be merged or overwritten in place.
+
+2. **Strong Typing & Dataclasses**:
+   - Previously, states were managed as loosely-typed Python dictionaries (`Dict[str, float]`).
+   - Phase 2A mandates Python `@dataclass` structures for all boundaries. 
+
+3. **Data Quality Awareness**:
+   - Every observation and the final twin state must explicitly declare its data quality and confidence bounds.
+
+## Contract Definitions
+
+All models reside in `src/digital_twin/models/`.
+
+### 1. `DigitalTwinState` (The Master Container)
+The root object that aggregates the entire state of the twin at a specific timestamp.
+- **Timestamp & IDs**: Temporal and spatial identity.
+- **Status & Confidence**: Overall health and data quality of the twin.
+- **Sub-states**:
+  - `operating_context`: Environmental and control inputs.
+  - `health_state`: Degradation and fault injection profiles.
+  - `observed_state`: Raw or pre-processed telemetry (The Physical Twin).
+  - `healthy_expected_state`: Baseline physical targets (The Expected Twin).
+  - `synchronization_result`: Status of temporal/contextual alignment between expected and observed.
+  - `estimated_actual_state`: Best estimate of reality (The Actual Twin).
+  - `residual_state`: Delta between observed and expected.
+
+### 2. `OperatingContext`
+Environmental variables (altitude, ambient temp/pressure) and pilot control inputs (throttle, pitch).
+
+### 3. `HealthState`
+Tracks physical degradation (e.g., turbo efficiency loss, sensor bias) and injected faults. Used primarily for simulations and health tracking.
+
+### 4. `ObservedState`
+The *truth* as reported by the physical engine's telemetry stream. 
+- All parameters are `Optional[float]` because sensor data may drop out.
+- Contains an explicit `data_quality` string ("GOOD", "MISSING", "DEGRADED").
+- **Crucial Rule**: Telemetry ingestion logic is strictly separated from the schema definition.
+
+### 5. `HealthyExpectedState`
+The *truth* as reported by the underlying Physics models, assuming a perfectly healthy engine.
+- Contains all 19 Category C parameters.
+- Default values are physical zeros or baseline ISA day constants, not `None`.
+
+### 6. `EstimatedActualState`
+The *truth* as estimated by the Digital Twin core (e.g., via UKF or Alpha Filter).
+- Represents the true current state of the engine, accounting for degradation, faults, and measurement noise.
+
+### 7. `ResidualState` & `ParameterResidual`
+Explicitly tracks the difference between `ObservedState` and `HealthyExpectedState` for each parameter.
+- `ParameterResidual`: Dataclass containing `expected`, `observed`, `residual`, `relative_error`, and `quality`.
+- Handles `NaN`, `Inf`, and `None` gracefully without crashing the analysis pipeline.
+
+### 8. `SynchronizationResult`
+Authoritative contract encapsulating the outcome of temporal, contextual, and physical alignment between the physical telemetry (`ObservedState`) and the baseline reference (`HealthyExpectedState`).
+- **Data Integrity**: Propagates data quality and failure semantics deterministically without adaptive learning or heuristic guessing.
+- Explicitly catches stale data, out-of-order sequence issues, timestamp discrepancies, and engine mismatches.
+- Dictates whether downstream estimation (UKF) and residual analysis proceed.
+
+## Migration from Phase 1
+- Older monolithic state contracts have been deleted and superseded by strict isolation of `ObservedState`, `HealthyExpectedState`, `ResidualState`, and `EstimatedActualState`.
+- `twin_engine.py` orchestrator has been updated to ingest telemetry externally rather than tightly coupling to a pipeline inside the state classes.
+
+## Next Steps
+With these contracts and the Phase 2B and 2C implementations in place, the system is ready to advance through the remainder of the Phase 2 roadmap (State Estimation, Residual Engine, Health-State Management).

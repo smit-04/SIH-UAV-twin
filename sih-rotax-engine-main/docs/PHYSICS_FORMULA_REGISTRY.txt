@@ -1,0 +1,124 @@
+SIH26054 Digital Twin — Master Physics Formula Registry
+
+This is the master index of all physics and empirical formulas implemented in the codebase.
+
+========================================================================================================================
+Atmosphere (Phase 1A)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+ATM-00 | Atmosphere | h_gp = (r_0 * h) / (r_0 + h)                    | Geopotential Alt. Conversion       | VERIFIED
+ATM-01 | Atmosphere | T = T_0 - L * h_gp                              | ISA Troposphere Temperature Lapse  | VERIFIED
+ATM-02 | Atmosphere | P = P_0 * (1 - (L*h_gp)/T_0) ^ (g*M / R*L)      | ISA Troposphere Hydrostatic Press. | VERIFIED
+ATM-03 | Atmosphere | P_sat = 6.1094 * exp(17.625*Tc / (243.04+Tc))   | Saturation Vapor Pressure (Magnus) | VERIFIED
+ATM-04 | Atmosphere | P_v = P_sat * (RH / 100)                        | Actual Vapor Partial Pressure      | VERIFIED
+ATM-05 | Atmosphere | rho = (P - P_v)/(R_d*T) + (P_v)/(R_v*T)         | Moist Air Density                  | VERIFIED
+ATM-06 | Atmosphere | a = sqrt(gamma * R_d * T)                       | Speed of Sound (Dry Approx)        | APPROX
+========================================================================================================================
+Turbo / Intake (Phase 1B)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+TRB-01 | Turbo/Int. | P_t = m_t*cp*T_exh*eta*(1-(P_amb/P_exh)^...)    | Turbine Isentropic Power           | VERIFIED
+TRB-02 | Turbo/Int. | PR_max = 1 + k_pr * w^2                         | Compressor Max PR Surrogate        | CALIBRAT
+TRB-03 | Turbo/Int. | m_c = k_flow * w * max(0, PR_max - PR_act)      | Compressor Mass Flow Surrogate     | CALIBRAT
+TRB-04 | Turbo/Int. | T_out = T_amb * (1 + (PR^... - 1)/eta_c)        | Compressor Temp Rise               | VERIFIED
+TRB-05 | Turbo/Int. | dw/dt = (P_t - P_c - P_loss)/(J * w)            | Turbo Shaft Dynamics               | VERIFIED
+TRB-06 | Turbo/Int. | dP/dt = (R*T_map / V_map) * (m_c - m_eng)       | Intake Plenum Pressure State       | VERIFIED
+========================================================================================================================
+Airflow / Engine Breathing (Phase 1C)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+AIR-01 | Airflow    | V_cyl = (pi/4) * bore^2 * stroke                | Cylinder Swept Volume              | VERIFIED
+AIR-02 | Airflow    | V_d = N_cyl * V_cyl                             | Total Engine Displacement          | VERIFIED
+AIR-03 | Airflow    | rho_charge = P_charge / (R_air * T_charge)      | Charge-Air Density                 | STD PHYSICS
+AIR-04 | Airflow    | m_cyl = eta_v * rho_charge * V_d * (N/2)        | Speed-Density Cylinder Filling     | ESTAB MVEM 
+AIR-05 | Airflow    | N = RPM / 60                                    | Engine RPM to rev/s                | VERIFIED
+AIR-06 | Airflow    | A_eff = A_idle + th^2 * (A_max - A_idle)        | Throttle Effective Area Surrogate  | CALIBRAT
+AIR-07 | Airflow    | m_th = C_d*A*P/sqrt(RT)*sqrt(...)               | Compressible Restriction Flow      | STD FLUID
+AIR-08 | Airflow    | PR <= (2/(gamma+1))^(gamma/(gamma-1))           | Choked Flow Criterion              | STD FLUID
+AIR-09 | Airflow    | eta_v = eta_v_base + c_rpm*(...) + c_p*(...)    | Volumetric Efficiency Surrogate    | CALIBRAT
+AIR-10 | Airflow    | m_th(P_charge) - m_cyl(P_charge) = 0            | Downstream Pressure Equilibration  | NUM SOLVER
+========================================================================================================================
+Fuel Flow and Combustion (Phase 1D)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+FUEL-01| Fuel Flow  | phi = base + f_load(P) + f_speed(N)             | Equivalence Ratio Surrogate        | CALIBRAT
+FUEL-02| Fuel Flow  | dP_fuel = P_fuel - P_airbox                     | Fuel Pressure Differential         | VERIFIED
+FUEL-03| Fuel Flow  | m_fuel = m_air / (AFR_stoich / phi)             | Fuel Mass Flow                     | VERIFIED
+FUEL-04| Fuel Flow  | V_fuel = m_fuel / rho_fuel * 3600 * 1000        | Fuel Volume Flow (L/h)             | VERIFIED
+ENE-01 | Energy     | P_release = m_fuel * LHV * eta_comb             | Chemical Heat Release              | ESTAB MVEM
+ENE-02 | Energy     | P_ind = P_release * eta_ind                     | Indicated Mechanical Power         | ESTAB MVEM
+ENE-03 | Energy     | P_exh = (P_release - P_ind) * eta_exh_partition | Exhaust Sensible Power Partition   | ESTAB MVEM
+COMB-01| Combustion | x_b(theta) = 1 - exp(-a*((theta-theta0)/dt)^...)| Wiebe Burn Fraction Surrogate      | ESTAB MVEM
+EXH-01 | Exhaust    | m_exh = m_air + m_fuel                          | Exhaust Mass Conservation          | VERIFIED
+EXH-02 | Exhaust    | T_exh = T_charge + P_exh / (m_exh * Cp_exh)     | Exhaust Temperature Energy Bal.    | VERIFIED
+EXH-03 | Exhaust    | P_exh = P_amb + K_exh * m_exh^2                 | Exhaust Backpressure Surrogate     | CALIBRAT
+========================================================================================================================
+Engine Dynamics and Torque Balance (Phase 1E)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+DYN-01 | Dynamics   | sum(T) = T_ind + T_start - T_fric - T_load      | Torque Balance                     | VERIFIED
+DYN-02 | Dynamics   | T_ind = P_ind / w_engine                        | Indicated Torque                   | VERIFIED
+DYN-03 | Dynamics   | dw/dt = sum(T) / J_eq                           | Angular Acceleration               | VERIFIED
+DYN-04 | Dynamics   | RPM = w_engine * 60 / (2*pi)                    | Angular Velocity to RPM Conversion | VERIFIED
+FRIC-01| Dynamics   | T_fric = C0 + C1*w + C2*w^2                     | Friction Torque Surrogate          | CALIBRAT
+GEAR-01| Dynamics   | w_prop = w_engine * R_gearbox                   | Gearbox Speed Reduction            | VERIFIED
+GEAR-02| Dynamics   | T_load = T_prop * R_gearbox / eta_gearbox       | Propeller Load Reflected to Engine | VERIFIED
+========================================================================================================================
+
+========================================================================================================================
+Propeller Aerodynamics (Phase 1F)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+PROP-01| Propeller  | J_p = v_air / (n_prop * D_prop)                 | Propeller Advance Ratio            | STD AERO
+PROP-02| Propeller  | C_T = f(J_p)                                    | Propeller Thrust Coefficient       | ESTAB MVEM
+PROP-03| Propeller  | C_Q = f(J_p)                                    | Propeller Torque Coefficient       | ESTAB MVEM
+PROP-04| Propeller  | T_prop = C_T * rho * n_prop^2 * D_prop^4        | Aerodynamic Propeller Thrust       | STD AERO
+PROP-05| Propeller  | Q_prop = C_Q * rho * n_prop^2 * D_prop^5        | Aerodynamic Propeller Torque       | STD AERO
+PROP-06| Propeller  | P_prop = 2 * pi * n_prop * Q_prop               | Absorbed Propeller Power           | VERIFIED
+PROP-07| Propeller  | eta_prop = (T_prop * v_air) / P_prop            | Propulsive Efficiency              | VERIFIED
+========================================================================================================================
+
+========================================================================================================================
+Engine Thermal Physics (Phase 1G)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+THERM-01| Thermal   | C_th = m * cp                                   | Node Thermal Capacity              | STD PHYSICS
+THERM-02| Thermal   | dT_CHT/dt = (Q_in - Q_CHT_Oil - Q_cool) / C_CHT | CHT Node Energy Balance            | STD PHYSICS
+THERM-03| Thermal   | Q_CHT_Oil = (T_CHT - T_Oil) / R_CHT_Oil         | CHT to Oil Heat Transfer           | STD PHYSICS
+THERM-04| Thermal   | Q_CHT_cooling = G_CHT_cool * (T_CHT - T_amb)    | CHT Environmental Cooling          | STD PHYSICS
+THERM-05| Thermal   | dT_Oil/dt = (Q_CHT_Oil - Q_Oil_cool) / C_Oil    | Oil Node Energy Balance            | STD PHYSICS
+THERM-06| Thermal   | Q_Oil_cooling = G_Oil_cool * (T_Oil - T_amb)    | Oil Environmental Cooling          | STD PHYSICS
+THERM-07| Thermal   | G_cool = max(G_min, G_base*(rho*V/rho0*V0)^a)   | Cooling Conductance Surrogate      | CALIBRAT
+THERM-08| Thermal   | T_next = T_current + (dT/dt) * dt               | Explicit Euler Time Integration    | NUM SOLVER
+========================================================================================================================
+
+*(Downstream Phase 1 System Integration to follow.)*
+
+========================================================================================================================
+State Estimation (Phase 2D UKF)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+EST-01 | State Est. | x_{k|k-1} = f(x_{k-1|k-1}, u_k)                 | UKF Process/Prediction Model       | UKF MATH
+EST-02 | State Est. | P_{k|k-1} = W_c * (X - x) * (X - x)^T + Q       | UKF A Priori Covariance            | UKF MATH
+EST-03 | State Est. | z_{k|k-1} = h(x_{k|k-1}, u_k)                   | UKF Measurement Model              | UKF MATH
+EST-04 | State Est. | K_k = P_{xz} * (P_{zz})^{-1}                    | Kalman Gain                        | UKF MATH
+EST-05 | State Est. | x_{k|k} = x_{k|k-1} + K_k * (z_k - z_{k|k-1})   | UKF State Measurement Update       | UKF MATH
+EST-06 | State Est. | P_{k|k} = P_{k|k-1} - K_k * P_{zz} * K_k^T      | UKF A Posteriori Covariance        | UKF MATH
+========================================================================================================================
+========================================================================================================================
+Residual and Confidence Analysis (Phase 2E)
+========================================================================================================================
+ID     | Subsystem  | Equation                                        | Meaning                            | Class    
+------------------------------------------------------------------------------------------------------------------------
+RES-01 | Residuals  | res_i = actual_i - expected_i                   | Absolute Deviation Calculation     | ANALYTICS
+RES-02 | Residuals  | rel_err_i = |res_i| / max(|expected_i|, floor)  | Relative Error w/ Zero Protection  | ANALYTICS
+RES-03 | Residuals  | conf = f_aggregate(warning_count, critical_count)| Digital Twin Confidence Score      | LOGIC
+========================================================================================================================
